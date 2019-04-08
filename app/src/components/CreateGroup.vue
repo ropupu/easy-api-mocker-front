@@ -19,10 +19,10 @@ export default {
   methods: {
       async createGroup() {
           try {
-              this.groupKey = await this._createGroup()
-              this.$emit("createGroup", this.groupKey)
+                this.groupKey = await this._createGroup()
+                this.$router.push({ name: 'Endpoints', params: { group_key: this.groupKey } })
           } catch (e) {
-              alert('failed to create a group')
+                alert('failed to create a group')
           }
       }
   }
