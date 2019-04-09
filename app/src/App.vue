@@ -1,6 +1,13 @@
 <template>
   <div id="app">
-    <router-view/>
+    <el-container>
+      <el-header>
+        <img src="./assets/logo.png">
+      </el-header>
+      <el-main>
+        <router-view/>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
@@ -11,6 +18,6 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 10px;
 }
 </style>
