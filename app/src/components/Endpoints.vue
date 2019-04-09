@@ -20,7 +20,7 @@
                     </el-form-item>
                     <el-form-item label="PATH" prop="path">
                         <el-input placeholder="foo/bar" v-model="form.path">
-                            <template slot="prepend">https://afternoon-spire-63041.herokuapp.com/api/{{ this.groupKey }}/</template>
+                            <template slot="prepend">{{ baseUrl }}{{ groupKey }}/</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="STATUS CODE" prop="statusCode">
@@ -89,16 +89,51 @@
                 </el-form>
             </el-col>
         </el-row>
-        <el-collapse>
-            <div v-for="endpoint in endpoints" :key="endpoint.index">
-                <el-collapse-item>
-                    <template slot="title">
-                        <div class="method">{{ endpoint.method }}</div>{{ endpoint.path }}
-                    </template>
-                    <div>status code: {{ endpoint.status_code }}</div>
-                </el-collapse-item>
-            </div>
-        </el-collapse>
+        <el-row :gutter="20">
+            <el-col :span="16" :offset="4">
+                <el-collapse>
+                    <div v-for="endpoint in endpoints" :key="endpoint.index">
+                        <el-collapse-item>
+                            <template slot="title">
+                                <div class="method">
+                                    <el-tag type="info" size="medium">
+                                        {{ endpoint.method }}
+                                    </el-tag>
+                                </div>
+                                <div class="path">{{ endpoint.path }}</div>
+                            </template>
+                            <div class="endpoint-detail">
+                                <table>
+                                    <tr>
+                                        <td class="endpoint-param">HEADERS</td>
+                                        <td>{{ JSON.stringify(endpoint.headers) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="endpoint-param">PARAMETERS</td>
+                                        <td>{{ JSON.stringify(endpoint.parameters) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="endpoint-param">STATUS CODE</td>
+                                        <td>{{ endpoint.status_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="endpoint-param">RESPONSE HEADERS</td>
+                                        <td>{{ JSON.stringify(endpoint.response_headers) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="endpoint-param">RESPONSE BODY</td>
+                                        <td>{{ endpoint.response_body }}</td>
+                                    </tr>
+                                </table>
+                                    <div class="curl-command">
+                                        {{ createCurlCommand(endpoint) }}
+                                    </div>
+                            </div>
+                        </el-collapse-item>
+                    </div>
+                </el-collapse>
+            </el-col>
+        </el-row>
     </div>
 </template>
 <style>
@@ -112,6 +147,28 @@
     padding-bottom: 10px;
     background: #c6e0e0;
 }
+.method {
+    text-align: right;
+    width: 180px;
+}
+.path {
+    text-align: left;
+    margin-left: 10px;
+}
+.endpoint-detail {
+    text-align: left;
+    margin-left: 10px;
+    padding-left: 180px;
+}
+.endpoint-param {
+    width: 100px;
+}
+.curl-command {
+    text-align: center;
+    padding: 10px;
+    background: #f2f5f9;
+    border-radius: 5px;
+}
 </style>
 <script>
 import Server from '@/mixins/Server'
@@ -121,7 +178,8 @@ export default {
   mixins: [Server],
   data: function() {
       return {
-          form: {
+          form: {},
+          initialForm: {
               method: "GET",
               statusCode: 200,
               path: undefined,
@@ -154,6 +212,7 @@ export default {
               statusCode: {type: "number", min: 200, max: 511, required: true, trigger: 'blur'},
               responseBody: {type: "string", trigger: 'blur'}
           },
+          baseUrl: undefined,
           isAdvancedFormUsed: false,
           error: undefined,
           groupKey: undefined,
@@ -174,6 +233,18 @@ export default {
                 value: undefined
             })
         },
+        createCurlCommand(endpoint) {
+            let commandArray = ['curl']
+            commandArray.push('-X', endpoint.method)
+            commandArray.push(this.baseUrl + this.groupKey + '/' + endpoint.path)
+            Object.keys(endpoint.headers).forEach((key) => {
+                commandArray.push('-H', `"${key}: ${endpoint.headers[key]}"`)
+            })
+            Object.keys(endpoint.parameters).forEach((key) => {
+                commandArray.push('--data', `"${key}: ${endpoint.parameters[key]}"`)
+            })
+            return commandArray.join(' ')
+        },
         async createEndpoint() {
             this.error = undefined
             let postHeaders = {}
@@ -181,17 +252,17 @@ export default {
             let postResponseHeaders = {}
             this.form.headers.forEach((header) => {
                 if (header.key && header.value) {
-                    postHeaders[key] = value
+                    postHeaders[header.key] = header.value
                 }
             })
             this.form.parameters.forEach((parameter) => {
                 if (parameter.key && parameter.value) {
-                    postParameters[key] = value
+                    postParameters[parameter.key] = parameter.value
                 }
             })
             this.form.responseHeaders.forEach((responseHeader) => {
                 if (responseHeader.key && responseHeader.value) {
-                    postResponseHeaders[key] = value
+                    postResponseHeaders[responseHeader.key] = responseHeader.value
                 }
             })
             try {
@@ -211,6 +282,11 @@ export default {
                     postResponseHeaders,
                     this.form.responseBody
                 )
+                this.$message({
+                    message: 'Congrats, endpoint was created successfully.',
+                    type: 'success'
+                });
+                this.form = Object.assign({}, this.initialForm)
                 this.endpoints = await this._getEndpoints(this.groupKey)
             } catch (e) {
                 this.error = e.message
@@ -229,6 +305,8 @@ export default {
   },
   created: async function() {
       this.groupKey = this.$route.params.group_key
+      this.form = Object.assign({}, this.initialForm)
+      this.baseUrl = this._getBaseUrl()
       if (!this.groupKey) {
           this.$router.push({ name: 'CreateGroup' })
       }
