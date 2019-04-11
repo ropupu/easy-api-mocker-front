@@ -1,7 +1,7 @@
 <template>
     <div class="endpoints">
         <el-row :gutter="20">
-            <el-col :span="16" :offset="4">
+            <el-col :span="16" :offset="2">
                 <el-alert
                   v-if="error"
                   :title="error"
@@ -9,7 +9,7 @@
                   center
                   show-icon>
                 </el-alert>
-                <el-form label-width="180px" :model="form" ref="form" :rules="formRules">
+                <el-form :model="form" ref="form" :rules="formRules">
                     <el-form-item label="METHOD" prop="method">
                         <el-radio-group v-model="form.method" >
                             <el-radio label="GET">GET</el-radio>
@@ -20,7 +20,6 @@
                     </el-form-item>
                     <el-form-item label="PATH" prop="path">
                         <el-input placeholder="foo/bar" v-model="form.path">
-                            <template slot="prepend">{{ baseUrl }}{{ groupKey }}/</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="STATUS CODE" prop="statusCode">
@@ -84,13 +83,13 @@
 
                     </div>
                     <el-form-item style="padding-top: 10px;">
-                        <el-button type="primary" @click="createEndpoint">Create</el-button>
+                        <el-button type="primary" @click="createEndpoint" :loading="loading">Create</el-button>
                     </el-form-item>
                 </el-form>
             </el-col>
         </el-row>
         <el-row :gutter="20">
-            <el-col :span="16" :offset="4">
+            <el-col :span="16" :offset="2">
                 <el-collapse>
                     <div v-for="endpoint in endpoints" :key="endpoint.index">
                         <el-collapse-item>
@@ -125,9 +124,9 @@
                                         <td>{{ endpoint.response_body }}</td>
                                     </tr>
                                 </table>
-                                    <div class="curl-command">
-                                        {{ createCurlCommand(endpoint) }}
-                                    </div>
+                                <div class="curl-command">
+                                    {{ createCurlCommand(endpoint) }}
+                                </div>
                             </div>
                         </el-collapse-item>
                     </div>
@@ -149,7 +148,7 @@
 }
 .method {
     text-align: right;
-    width: 180px;
+    width: 20%;
 }
 .path {
     text-align: left;
@@ -158,10 +157,9 @@
 .endpoint-detail {
     text-align: left;
     margin-left: 10px;
-    padding-left: 180px;
 }
 .endpoint-param {
-    width: 100px;
+    width: 20%;
 }
 .curl-command {
     text-align: center;
@@ -212,6 +210,7 @@ export default {
               statusCode: {type: "number", min: 200, max: 511, required: true, trigger: 'blur'},
               responseBody: {type: "string", trigger: 'blur'}
           },
+          loading: false,
           baseUrl: undefined,
           isAdvancedFormUsed: false,
           error: undefined,
@@ -246,6 +245,7 @@ export default {
             return commandArray.join(' ')
         },
         async createEndpoint() {
+            this.loading = true
             this.error = undefined
             let postHeaders = {}
             let postParameters = {}
@@ -291,6 +291,7 @@ export default {
             } catch (e) {
                 this.error = e.message
             }
+            this.loading = false
         },
         async getEndpoints() {
             try {

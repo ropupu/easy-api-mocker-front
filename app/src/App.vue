@@ -2,7 +2,11 @@
   <div id="app">
     <el-container>
       <el-header>
-        <img src="./assets/logo.png">
+        <el-row :gutter="20">
+            <el-col :span="12" :offset="6">
+              <img src="./assets/logo.png" style="width: 80%;">
+            </el-col>
+        </el-row>
       </el-header>
       <el-main>
         <router-view/>
