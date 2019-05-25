@@ -180,7 +180,7 @@ export default {
           initialForm: {
               method: "GET",
               statusCode: 200,
-              path: undefined,
+              path: '',
               headers: [
                   {
                       index: 0,
@@ -202,7 +202,7 @@ export default {
                       value: undefined
                   }
               ],
-              responseBody: undefined
+              responseBody: ''
           },
           formRules: {
               method: {type: "enum", enum: ['GET', 'POST', 'PUT', 'DELETE'], required: true, trigger: 'blur'},
